@@ -1,0 +1,41 @@
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+.DS_Store
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Docker
+.dockerignore
+
+# Next.js
+ui/.next/
+ui/out/
+ui/node_modules/
+ui/.env*.local
+
+# Testing
+coverage/
+*.coverprofile

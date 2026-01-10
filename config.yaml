@@ -1,0 +1,6 @@
+version: v1
+proxy_addr: ":8080"
+admin_addr: ":8081"
+backends:
+  - "http://localhost:8082"
+  - "http://localhost:8083"

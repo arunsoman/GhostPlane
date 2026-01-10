@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  nlb-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nlb-backend
+    environment:
+      - NLB_API_PORT=8081
+      - NLB_PROXY_PORT=8080
+      - NLB_LOG_LEVEL=info
+      - NLB_JWT_SECRET=${NLB_JWT_SECRET:-change-this-in-production-please}
+      - NLB_ADMIN_USERNAME=${NLB_ADMIN_USERNAME:-admin}
+      - NLB_ADMIN_PASSWORD=${NLB_ADMIN_PASSWORD:-admin123}
+    ports:
+      - "8080:8080"  # Proxy port
+      - "8081:8081"  # API port
+    networks:
+      - nlb-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  nlb-ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: nlb-ui
+    environment:
+      - NEXT_PUBLIC_API_URL=http://nlb-backend:8081
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    networks:
+      - nlb-network
+    depends_on:
+      nlb-backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  nlb-network:
+    driver: bridge

@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  :root {
+    /* High-Contrast Modern Palette */
+    --bg-primary: #0a0b0f;
+    --bg-secondary: #13151d;
+    --bg-elevated: #1a1d29;
+
+    --text-primary: #ffffff;
+    --text-secondary: #a0a8b8;
+    --text-muted: #6b7280;
+
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-purple: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.15);
+  }
+
+  .glass {
+    background: rgba(26, 29, 41, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .animate-in {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
