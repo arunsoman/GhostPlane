@@ -34,6 +34,13 @@ npm-debug.log*
 *.swp
 *.swo
 
+# eBPF
+*.o
+*.a
+
+# Data
+data/*.db
+
 # OS
 .DS_Store
 Thumbs.db

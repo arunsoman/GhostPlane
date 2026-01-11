@@ -8,12 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/yourusername/nlb/pkg/auth"
-	"github.com/yourusername/nlb/pkg/config"
-	"github.com/yourusername/nlb/pkg/db"
-	"github.com/yourusername/nlb/pkg/ebpf"
-	"github.com/yourusername/nlb/pkg/proxy"
-	"github.com/yourusername/nlb/pkg/setup"
+	"github.com/arunsoman/GhostPlane/pkg/auth"
+	"github.com/arunsoman/GhostPlane/pkg/config"
+	"github.com/arunsoman/GhostPlane/pkg/db"
+	"github.com/arunsoman/GhostPlane/pkg/ebpf"
+	"github.com/arunsoman/GhostPlane/pkg/proxy"
+	"github.com/arunsoman/GhostPlane/pkg/setup"
 )
 
 // Server represents the Management API server

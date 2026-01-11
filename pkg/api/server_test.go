@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/nlb/pkg/config"
-	"github.com/yourusername/nlb/pkg/db"
-	"github.com/yourusername/nlb/pkg/proxy"
+	"github.com/arunsoman/GhostPlane/pkg/config"
+	"github.com/arunsoman/GhostPlane/pkg/db"
+	"github.com/arunsoman/GhostPlane/pkg/proxy"
 )
 
 func TestServer_Config(t *testing.T) {

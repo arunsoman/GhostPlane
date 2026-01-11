@@ -11,13 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/yourusername/nlb/pkg/api"
-	"github.com/yourusername/nlb/pkg/auth"
-	"github.com/yourusername/nlb/pkg/config"
-	"github.com/yourusername/nlb/pkg/db"
-	"github.com/yourusername/nlb/pkg/ebpf"
-	"github.com/yourusername/nlb/pkg/proxy"
-	"github.com/yourusername/nlb/pkg/telemetry"
+	"github.com/arunsoman/GhostPlane/pkg/api"
+	"github.com/arunsoman/GhostPlane/pkg/auth"
+	"github.com/arunsoman/GhostPlane/pkg/config"
+	"github.com/arunsoman/GhostPlane/pkg/db"
+	"github.com/arunsoman/GhostPlane/pkg/ebpf"
+	"github.com/arunsoman/GhostPlane/pkg/proxy"
+	"github.com/arunsoman/GhostPlane/pkg/telemetry"
 )
 
 var (
@@ -115,16 +115,16 @@ func run(args []string, lookupEnv func(string) (string, bool), baseCtx context.C
 
 	// Start proxy in background
 	go func() {
-		log.Println("🚀 Starting L7 Proxy on :8080")
-		if err := p.Start(":8080"); err != nil && err != http.ErrServerClosed {
+		log.Printf("🚀 Starting L7 Proxy on %s", cfg.ProxyAddr)
+		if err := p.Start(cfg.ProxyAddr); err != nil && err != http.ErrServerClosed {
 			errCh <- fmt.Errorf("proxy failed: %v", err)
 		}
 	}()
 
 	// Initialize and start Management API with auth
 	go func() {
-		log.Println("🌐 Starting Management API on :8081")
-		if err := apiServer.Start(":8081"); err != nil && err != http.ErrServerClosed {
+		log.Printf("🌐 Starting Management API on %s", cfg.AdminAddr)
+		if err := apiServer.Start(cfg.AdminAddr); err != nil && err != http.ErrServerClosed {
 			errCh <- fmt.Errorf("API server failed: %v", err)
 		}
 	}()

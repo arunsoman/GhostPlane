@@ -87,7 +87,7 @@ backends:
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- run([]string{"cmd", "-config", tmpfile.Name()}, func(string) (string, bool) { return "", false }, ctx)
@@ -108,12 +108,8 @@ backends:
 }
 
 func TestRun_ServerError(t *testing.T) {
-	// Trigger a server error (e.g., port already in use)
-	// We can use a trick: start a listener on a port, and then try to start NLB on that port
-	// But let's just use the errCh logic.
-	
 	content := `
-proxy_addr: "invalid_addr" # This will cause an error on Start
+proxy_addr: "999.999.999.999:80" # Invalid IP
 admin_addr: ":0"
 backends: []
 `

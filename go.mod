@@ -1,4 +1,4 @@
-module github.com/yourusername/nlb
+module github.com/arunsoman/GhostPlane
 
 go 1.24.0
 
