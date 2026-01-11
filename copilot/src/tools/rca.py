@@ -1,4 +1,3 @@
-import os
 from .metrics import get_service_metrics
 from .logs import get_logs
 

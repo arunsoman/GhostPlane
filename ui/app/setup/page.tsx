@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Shield, Server, Activity, ArrowRight, CheckCircle2, AlertCircle, Cpu, Wifi } from 'lucide-react'
 
@@ -14,7 +14,7 @@ export default function SetupPage() {
 
     const [error, setError] = useState<string | null>(null)
 
-    const checkBackend = () => {
+    const checkBackend = useCallback(() => {
         setLoading(true)
         setError(null)
         fetch('/api/v1/setup/check')
@@ -31,7 +31,7 @@ export default function SetupPage() {
                 setError('Could not connect to NLB+ Control Plane. Is the backend running locally on port 8000?')
                 setLoading(false)
             })
-    }
+    }, [])
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -40,7 +40,7 @@ export default function SetupPage() {
             return
         }
         checkBackend()
-    }, [])
+    }, [router, checkBackend])
     // ... initialize handlers ...
     const handleInitialize = async () => {
         setFinishing(true)

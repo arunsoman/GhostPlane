@@ -1,4 +1,4 @@
-from typing import TypedDict, Annotated, List, Union
+from typing import TypedDict, List, Union
 from langgraph.graph import StateGraph, END
 from .tools.metrics import get_service_metrics
 from .tools.logs import get_logs
