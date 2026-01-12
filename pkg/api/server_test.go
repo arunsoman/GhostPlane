@@ -18,7 +18,7 @@ import (
 func TestServer_Config(t *testing.T) {
 	conf := &config.Config{Version: "v1"}
 	p, _ := proxy.New([]string{})
-	s := NewServer(conf, nil, p, nil, nil)
+	s, _ := NewServer(conf, nil, p, nil, nil, "../../templates")
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/config", nil)
 	w := httptest.NewRecorder()
@@ -32,7 +32,7 @@ func TestServer_Config(t *testing.T) {
 
 func TestServer_Metrics(t *testing.T) {
 	p, _ := proxy.New([]string{"http://localhost:8081"})
-	s := NewServer(nil, nil, p, nil, nil)
+	s, _ := NewServer(nil, nil, p, nil, nil, "../../templates")
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics", nil)
 	w := httptest.NewRecorder()
 
@@ -44,7 +44,7 @@ func TestServer_Metrics(t *testing.T) {
 }
 
 func TestServer_Health(t *testing.T) {
-	s := NewServer(nil, nil, nil, nil, nil)
+	s, _ := NewServer(nil, nil, nil, nil, nil, "../../templates")
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 
@@ -61,7 +61,7 @@ func TestServer_Setup(t *testing.T) {
 	store, _ := db.NewStore(dbPath)
 	defer store.Close()
 
-	s := NewServer(nil, nil, nil, nil, store)
+	s, _ := NewServer(nil, nil, nil, nil, store, "../../templates")
 
 	// Test check
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/setup/check", nil)
@@ -97,7 +97,10 @@ func TestServer_Setup(t *testing.T) {
 
 func TestServer_Lifecycle(t *testing.T) {
 	p, _ := proxy.New([]string{"http://localhost:8081"})
-	s := NewServer(nil, nil, p, nil, nil)
+	s, err := NewServer(nil, nil, p, nil, nil, "../../templates")
+	if err != nil {
+		t.Fatalf("failed to create server: %v", err)
+	}
 
 	errCh := make(chan error, 1)
 	go func() {

@@ -104,7 +104,10 @@ func run(args []string, lookupEnv func(string) (string, bool), baseCtx context.C
 	}
 
 	// Initialize Management API
-	apiServer := api.NewServer(cfg, authService, p, loader, store)
+	apiServer, err := api.NewServer(cfg, authService, p, loader, store, "templates")
+	if err != nil {
+		log.Fatalf("failed to initialize API server: %v", err)
+	}
 
 	// Restore persisted routes
 	if err := apiServer.InitializeRoutes(); err != nil {

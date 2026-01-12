@@ -1,0 +1,44 @@
+metadata:
+  id: "blue-green-deploy"
+  name: "Blue-Green Deployment"
+  category: "deployment"
+  difficulty: "intermediate"
+  description: "Seamlessly switch between two backend environments for zero-downtime releases."
+  icon: "🔵🟢"
+  tags: ["deployment", "zero-downtime", "l7"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["L7 Traffic Splitter"]
+  components: ["Blue Pool", "Green Pool"]
+  diagram: "Client -> Traffic Router -> [Blue Pool | Green Pool]"
+
+parameters:
+  - name: "active_pool"
+    type: "enum"
+    required: true
+    default: "blue"
+    options: ["blue", "green"]
+    description: "Which environment should receive traffic?"
+  - name: "blue_targets"
+    type: "ip_list"
+    required: true
+    description: "IP:Port list for Blue environment"
+  - name: "green_targets"
+    type: "ip_list"
+    required: true
+    description: "IP:Port list for Green environment"
+
+configuration: |
+  l7_routes:
+    - path: "/*"
+      targets: {{ if eq .active_pool "blue" }}{{ .blue_targets | json }}{{ else }}{{ .green_targets | json }}{{ end }}
+      priority: 1
+
+verification:
+  test_requests:
+    - method: "GET"
+      path: "/version"
+      expected_status: 200
+  metrics_to_check: ["backend_selection"]

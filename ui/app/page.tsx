@@ -10,7 +10,10 @@ import LogViewer from '../components/monitoring/log-viewer'
 import MetricsChart from '@/components/MetricsChart'
 import CopilotChat from '@/components/CopilotChat'
 import EBPFDashboard from '../components/ebpf/ebpf-dashboard'
-import { Activity, Globe, Zap, ShieldCheck, ArrowRight, BarChart3, ShieldAlert, Plus, Settings, Shield, Cpu } from 'lucide-react'
+import TemplateGallery from '../components/templates/template-gallery'
+import DeploymentWizard from '../components/templates/deployment-wizard'
+import { Template } from '../components/templates/types'
+import { Activity, Globe, Zap, ShieldCheck, ArrowRight, BarChart3, ShieldAlert, Plus, Settings, Shield, Cpu, Grid } from 'lucide-react'
 
 export default function Page() {
     const [currentView, setCurrentView] = useState('dashboard')
@@ -21,10 +24,36 @@ export default function Page() {
         system_health: 'Initialising...',
         timestamp: 0
     })
+    const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
 
     const handleBackToDashboard = () => {
         setCurrentView('dashboard')
     }
+
+    useEffect(() => {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
+        const eventSource = new EventSource('/api/v1/stream')
+
+        eventSource.addEventListener('deployment', (event) => {
+            try {
+                const deployment = JSON.parse(event.data)
+                // In a real app, we'd use a toast library here.
+                // For now, checking notification permission or console logging is enough validation
+                console.log('🚀 Deployment Event:', deployment)
+
+                // Refresh metrics immediately
+                setMetrics(prev => ({ ...prev, timestamp: Date.now() }))
+            } catch (err) {
+                console.error('Failed to parse deployment event', err)
+            }
+        })
+
+        return () => {
+            eventSource.close()
+        }
+    }, [])
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -314,6 +343,8 @@ export default function Page() {
                         </div>
                     </div>
                 )
+            case 'templates':
+                return <TemplateGallery onSelectTemplate={setSelectedTemplate} />
             case 'settings':
                 return (
                     <div className="animate-in h-full flex items-center justify-center py-20">
@@ -354,6 +385,17 @@ export default function Page() {
                     {renderContent()}
                 </div>
             </main>
+
+            {selectedTemplate && (
+                <DeploymentWizard
+                    template={selectedTemplate}
+                    onClose={() => setSelectedTemplate(null)}
+                    onDeployComplete={() => {
+                        setSelectedTemplate(null)
+                        setCurrentView('dashboard')
+                    }}
+                />
+            )}
         </div>
     )
 }

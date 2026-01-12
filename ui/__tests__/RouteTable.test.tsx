@@ -52,6 +52,11 @@ describe('RouteTable', () => {
         const deleteButton = buttons[buttons.length - 1]
         fireEvent.click(deleteButton)
 
+        // Wait for modal and click confirm
+        await waitFor(() => expect(screen.getByText('Delete Route')).toBeTruthy())
+        const confirmButton = screen.getByText('Delete Item')
+        fireEvent.click(confirmButton)
+
         await waitFor(() => {
             expect(global.fetch).toHaveBeenCalledWith('/api/v1/config', expect.objectContaining({
                 method: 'POST',

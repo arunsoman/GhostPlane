@@ -10,13 +10,15 @@ import {
     LayoutDashboard,
     Globe,
     Server,
-    Cpu
+    Cpu,
+    Grid
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
     { icon: Globe, label: 'Proxy Rules', id: 'proxy' },
+    { icon: Grid, label: 'Solutions', id: 'templates' },
     { icon: Server, label: 'Backends', id: 'backends' },
     { icon: Cpu, label: 'L4 (eBPF)', id: 'ebpf' },
     { icon: Activity, label: 'Monitoring', id: 'monitoring' },

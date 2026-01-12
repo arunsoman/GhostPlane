@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+	"sync" // Added for sync.Mutex
 	"sync/atomic"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/arunsoman/GhostPlane/pkg/ebpf"
 	"github.com/arunsoman/GhostPlane/pkg/proxy"
 	"github.com/arunsoman/GhostPlane/pkg/setup"
+	"github.com/arunsoman/GhostPlane/pkg/templates" // Added for templates
 )
 
 // Server represents the Management API server
@@ -22,19 +25,36 @@ type Server struct {
 	authService *auth.AuthService
 	proxy       *proxy.Proxy
 	ebpfLoader  *ebpf.Loader
+	templates   *templates.Repository // Added
+	renderer    *templates.Renderer   // Added
+	mu          sync.Mutex            // Added
 	store       *db.Store
-	server      *http.Server
+	// Stream channels
+	metricsTicker  *time.Ticker
+	DeploymentChan chan templates.Deployment // Added for SSE broadcasting
+
+	server *http.Server
 }
 
 // NewServer creates a new API server
-func NewServer(cfg *config.Config, authSvc *auth.AuthService, p *proxy.Proxy, el *ebpf.Loader, s *db.Store) *Server {
-	return &Server{
-		config:      cfg,
-		authService: authSvc,
-		proxy:       p,
-		ebpfLoader:  el,
-		store:       s,
+func NewServer(cfg *config.Config, authSvc *auth.AuthService, p *proxy.Proxy, el *ebpf.Loader, s *db.Store, templatePath string) (*Server, error) {
+	// Initialize template repository and renderer
+	repo, err := templates.NewRepository(templatePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize template repository: %w", err)
 	}
+	renderer := templates.NewRenderer()
+
+	return &Server{
+		config:         cfg,
+		authService:    authSvc,
+		proxy:          p,
+		ebpfLoader:     el,
+		templates:      repo,
+		renderer:       renderer,
+		store:          s,
+		DeploymentChan: make(chan templates.Deployment, 10), // Buffered channel
+	}, nil
 }
 
 // Start starts the API server
@@ -56,6 +76,22 @@ func (s *Server) Start(addr string) error {
 	protectedMux.HandleFunc("/api/v1/ebpf/config", s.handleEBPFConfig)
 	protectedMux.HandleFunc("/api/v1/change-password", s.authService.HandleChangePassword)
 	protectedMux.HandleFunc("/api/v1/setup/initialize", s.handleSetupInitialize)
+
+	// Template Gallery Routes
+	tmplHandler := templates.NewHandler(s.templates, s.renderer, templates.NewSimulator(), s.proxy, s.ebpfLoader, s.store, s.DeploymentChan)
+	fmt.Println("DEBUG: Registering Template Routes...")
+	protectedMux.HandleFunc("/api/v1/templates", tmplHandler.ListTemplates)
+	fmt.Println("DEBUG: Registering /api/v1/deployments/active")
+	protectedMux.HandleFunc("/api/v1/deployments/active", tmplHandler.GetActiveDeployment)
+	protectedMux.HandleFunc("/api/v1/templates/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/deploy") {
+			tmplHandler.DeployTemplate(w, r)
+		} else if strings.HasSuffix(r.URL.Path, "/verify") {
+			tmplHandler.VerifyTemplate(w, r)
+		} else {
+			tmplHandler.GetTemplate(w, r)
+		}
+	})
 
 	// Wrap protected routes with auth middleware
 	mux.Handle("/api/v1/", s.authService.Middleware(protectedMux))
@@ -211,6 +247,12 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 				"timestamp":          time.Now().Unix(),
 			})
 			fmt.Fprintf(w, "event: metrics\ndata: %s\n\n", data)
+			flusher.Flush()
+
+		case deploy := <-s.DeploymentChan:
+			// Stream deployment event
+			data, _ := json.Marshal(deploy)
+			fmt.Fprintf(w, "event: deployment\ndata: %s\n\n", data)
 			flusher.Flush()
 		}
 	}

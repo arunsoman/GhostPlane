@@ -1,0 +1,47 @@
+metadata:
+  id: "legacy-waf-hard"
+  name: "Legacy WAF Hardening"
+  category: "security"
+  difficulty: "intermediate"
+  description: "Protect legacy applications with strict rules, header validation, and path hardening."
+  icon: "🧱"
+  tags: ["security", "waf", "legacy"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["L7 WAF Layer"]
+  components: ["Path Validator", "Header Filter", "Proxy"]
+  diagram: "Untrusted Request -> WAF Rules (Path/Header Check) -> Legacy Backend"
+
+parameters:
+  - name: "strict_paths"
+    type: "ip_list"
+    required: true
+    default: ["/api/*", "/login", "/public/*"]
+    description: "Whitelisted paths. All others will be blocked."
+  - name: "allowed_methods"
+    type: "ip_list"
+    required: false
+    default: ["GET", "POST"]
+    description: "Whitelisted HTTP methods"
+  - name: "legacy_backend"
+    type: "ip_list"
+    required: true
+    description: "IP:Port of the legacy application"
+
+configuration: |
+  l7_routes:
+    - path: "/*"
+      methods: {{ .allowed_methods | json }}
+      targets: {{ .legacy_backend | json }}
+      priority: 1
+      # Note: 'strict_paths' would be enforced by the proxy's routing logic
+      # by only allowing requests matching these prefixes.
+
+verification:
+  test_requests:
+    - method: "DELETE"
+      path: "/admin"
+      expected_status: 403
+  metrics_to_check: ["waf_blocked_requests", "invalid_header_count"]

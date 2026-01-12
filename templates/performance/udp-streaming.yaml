@@ -1,0 +1,37 @@
+metadata:
+  id: "udp-streaming"
+  name: "UDP Streaming Optimized"
+  category: "performance"
+  difficulty: "advanced"
+  description: "Low-latency UDP load balancing for VoIP, Gaming, and Media streaming."
+  icon: "📺"
+  tags: ["udp", "l4", "performance"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["L4 UDP Balancer"]
+  components: ["XDP L4 Forwarder"]
+  diagram: "UDP Client -> XDP LB -> UDP Backend"
+
+parameters:
+  - name: "udp_port"
+    type: "integer"
+    required: true
+    default: 5060
+    description: "UDP port for the stream (e.g., SIP, RTP)"
+  - name: "streaming_backends"
+    type: "ip_list"
+    required: true
+    description: "IP:Port list of UDP backend servers"
+
+configuration: |
+  l4_config:
+    protocol: "udp"
+    listener_port: "{{ .udp_port }}"
+    targets: {{ .streaming_backends | json }}
+    algo: "maglev" # Maglev hashing for consistent flow
+
+verification:
+  test_requests: []
+  metrics_to_check: ["udp_packets_forwarded", "jitter_ms"]

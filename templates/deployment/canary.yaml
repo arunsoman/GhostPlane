@@ -1,0 +1,43 @@
+metadata:
+  id: "canary-release-10"
+  name: "Canary Release (10%)"
+  category: "deployment"
+  difficulty: "intermediate"
+  description: "Route 10% of traffic to new features to validate in production safely."
+  icon: "🐤"
+  tags: ["deployment", "canary", "l7"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["Weighted Traffic Splitting"]
+  components: ["Stable Pool", "Canary Pool"]
+  diagram: "90% Traffic -> Stable | 10% Traffic -> Canary"
+
+parameters:
+  - name: "stable_targets"
+    type: "ip_list"
+    required: true
+    description: "IP:Port list for Stable version"
+  - name: "canary_targets"
+    type: "ip_list"
+    required: true
+    description: "IP:Port list for Canary version"
+
+configuration: |
+  l7_routes:
+    - path: "/*"
+      targets: {{ .stable_targets | json }}
+      priority: 10
+    - path: "/*"
+      targets: {{ .canary_targets | json }}
+      priority: 5
+      # Note: Weighted routing would be implemented in the proxy layer
+      # This template assumes the proxy selects lower priority if higher fails or via internal weights
+
+verification:
+  test_requests:
+    - method: "GET"
+      path: "/health"
+      expected_status: 200
+  metrics_to_check: ["canary_success_rate", "http_status_5xx"]

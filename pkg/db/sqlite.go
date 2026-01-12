@@ -43,6 +43,14 @@ func (s *Store) init() error {
 		value TEXT,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
+	CREATE TABLE IF NOT EXISTS deployments (
+		id TEXT PRIMARY KEY,
+		template_id TEXT,
+		parameters TEXT,
+		status TEXT,
+		config TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
 	INSERT OR IGNORE INTO system_settings (key, value) VALUES ('setup_complete', 'false');
 	`
 	_, err := s.db.Exec(query)
@@ -50,6 +58,37 @@ func (s *Store) init() error {
 		return fmt.Errorf("failed to initialize schema: %w", err)
 	}
 	return nil
+}
+
+// DeploymentRecord represents a row in the deployments table
+type DeploymentRecord struct {
+	ID         string
+	TemplateID string
+	Parameters string // JSON
+	Status     string
+	Config     string // JSON
+	CreatedAt  string
+}
+
+func (s *Store) SaveDeployment(id, templateID string, params, config interface{}, status string) error {
+	paramsJSON, _ := json.Marshal(params)
+	configJSON, _ := json.Marshal(config)
+
+	query := `INSERT OR REPLACE INTO deployments (id, template_id, parameters, status, config, created_at) 
+	          VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+
+	_, err := s.db.Exec(query, id, templateID, string(paramsJSON), status, string(configJSON))
+	return err
+}
+
+func (s *Store) GetDeployment(id string) (*DeploymentRecord, error) {
+	var d DeploymentRecord
+	err := s.db.QueryRow("SELECT id, template_id, parameters, status, config, created_at FROM deployments WHERE id = ?", id).
+		Scan(&d.ID, &d.TemplateID, &d.Parameters, &d.Status, &d.Config, &d.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
 }
 
 func (s *Store) SetSetting(key, value string) error {

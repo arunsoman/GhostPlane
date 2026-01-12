@@ -22,6 +22,9 @@ import {
 
 import RouteEditor from './route-editor'
 import MigrationModal from './migration-modal'
+import DeleteConfirmationModal from './delete-confirmation-modal'
+import DeploymentWizard from '../templates/deployment-wizard'
+import { Template } from '../templates/types'
 
 // Types matching the Backend API
 interface ConfigRoute {
@@ -29,6 +32,11 @@ interface ConfigRoute {
     methods?: string[]
     priority?: number
     targets: string[]
+    source?: {
+        type: string
+        template_id?: string
+        deployment_id?: string
+    }
 }
 
 interface RouteTableProps {
@@ -41,7 +49,13 @@ export default function RouteTable({ className }: RouteTableProps) {
     const [error, setError] = useState<string | null>(null)
     const [isEditorOpen, setIsEditorOpen] = useState(false)
     const [isMigrationOpen, setIsMigrationOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [routeToDelete, setRouteToDelete] = useState<string | null>(null)
     const [editingRoute, setEditingRoute] = useState<ConfigRoute | null>(null)
+
+    // Template Edit State
+    const [wizardTemplate, setWizardTemplate] = useState<Template | null>(null)
+    const [wizardDeploymentId, setWizardDeploymentId] = useState<string | undefined>(undefined)
 
     const fetchRoutes = async () => {
         try {
@@ -94,9 +108,15 @@ export default function RouteTable({ className }: RouteTableProps) {
         }
     }
 
-    const handleDelete = async (path: string) => {
-        if (!confirm(`Delete route for ${path}?`)) return
+    const handleDeleteClick = (path: string) => {
+        setRouteToDelete(path)
+        setIsDeleteModalOpen(true)
+    }
 
+    const confirmDelete = async () => {
+        if (!routeToDelete) return
+
+        const path = routeToDelete
         // Optimistic update
         const oldRoutes = [...routes]
         const newRoutes = routes.filter(r => r.path !== path)
@@ -116,12 +136,36 @@ export default function RouteTable({ className }: RouteTableProps) {
         } catch (err) {
             alert('Failed to delete route')
             setRoutes(oldRoutes) // Revert
+            throw err // Re-throw for the modal to handle loading state
+        } finally {
+            setRouteToDelete(null)
         }
     }
 
     const openEditor = (route?: ConfigRoute) => {
         setEditingRoute(route || null)
         setIsEditorOpen(true)
+    }
+
+    const handleTemplateEdit = async (route: ConfigRoute) => {
+        if (!route.source?.template_id) return
+
+        try {
+            const token = localStorage.getItem('token')
+            const res = await fetch(`/api/v1/templates/${route.source.template_id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const tmpl = await res.json()
+                setWizardTemplate(tmpl)
+                setWizardDeploymentId(route.source.deployment_id)
+            } else {
+                alert('Failed to load original template')
+            }
+        } catch (e) {
+            console.error(e)
+            alert('Error loading template')
+        }
     }
 
     const handleExport = () => {
@@ -174,10 +218,38 @@ export default function RouteTable({ className }: RouteTableProps) {
                 initialRoute={editingRoute}
             />
 
+            {wizardTemplate && (
+                <DeploymentWizard
+                    template={wizardTemplate}
+                    initialDeploymentId={wizardDeploymentId}
+                    onClose={() => {
+                        setWizardTemplate(null)
+                        setWizardDeploymentId(undefined)
+                    }}
+                    onDeployComplete={() => {
+                        setWizardTemplate(null)
+                        setWizardDeploymentId(undefined)
+                        fetchRoutes()
+                    }}
+                />
+            )}
+
             <MigrationModal
                 isOpen={isMigrationOpen}
                 onClose={() => setIsMigrationOpen(false)}
                 onApplied={fetchRoutes}
+            />
+
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false)
+                    setRouteToDelete(null)
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Route"
+                message="Are you sure you want to remove this traffic rule? This action cannot be undone."
+                itemName={routeToDelete || ''}
             />
 
             <div className="flex items-center justify-between">
@@ -303,15 +375,25 @@ export default function RouteTable({ className }: RouteTableProps) {
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                className="p-2 rounded hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-white transition-colors"
-                                                onClick={() => openEditor(route)}
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
+                                            {route.source?.type === 'template' ? (
+                                                <button
+                                                    className="p-2 rounded hover:bg-cyan-500/10 text-[var(--accent-cyan)] hover:text-cyan-400 transition-colors"
+                                                    message-tooltip="Edit via Template Wizard"
+                                                    onClick={() => handleTemplateEdit(route)}
+                                                >
+                                                    <Wand2 size={16} />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="p-2 rounded hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-white transition-colors"
+                                                    onClick={() => openEditor(route)}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                            )}
                                             <button
                                                 className="p-2 rounded hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 transition-colors"
-                                                onClick={() => handleDelete(route.path)}
+                                                onClick={() => handleDeleteClick(route.path)}
                                             >
                                                 <Trash2 size={16} />
                                             </button>

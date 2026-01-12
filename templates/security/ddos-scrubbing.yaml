@@ -1,0 +1,45 @@
+metadata:
+  id: "ddos-scrubber"
+  name: "DDoS Scrubbing Center"
+  category: "security"
+  difficulty: "advanced"
+  description: "XDP-powered edge protection to scrub volumetric attacks before they hit the stack."
+  icon: "🛡️"
+  tags: ["security", "xdp", "ebpf", "l4"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["L4 XDP Scrubbing", "L7 Proxy"]
+  components: ["XDP Filter", "Rate Limiter", "Core Proxy"]
+  diagram: "Attack Traffic -> XDP Dropper (CPU 0) -> Valid Traffic -> Proxy"
+
+parameters:
+  - name: "protected_port"
+    type: "integer"
+    required: true
+    default: 80
+    description: "Port to apply L4 protection to"
+  - name: "pps_limit"
+    type: "integer"
+    required: false
+    default: 100000
+    description: "Packets per second limit before dropping"
+  - name: "allowed_subnets"
+    type: "ip_list"
+    required: false
+    description: "Whitelisted subnets (bypass scrubbing)"
+
+configuration: |
+  l4_config:
+    xdp_mode: "skb"
+    listeners: {{ .protected_port | json }}
+    rate_limit_pps: "{{ .pps_limit }}"
+    whitelist: {{ .allowed_subnets | json }}
+  l7_routes:
+    - path: "/*"
+      targets: ["127.0.0.1:8080"]
+
+verification:
+  test_requests: []
+  metrics_to_check: ["xdp_drops", "ebpf_stats_pps"]

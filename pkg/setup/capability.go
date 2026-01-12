@@ -2,7 +2,6 @@ package setup
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 	"strings"
@@ -47,8 +46,7 @@ func CheckCapabilities() *Capabilities {
 
 	// NLB+ requires root/CAP_SYS_ADMIN
 	euid := os.Geteuid()
-	uid := os.Getuid()
-	log.Printf("DEBUG_CAPS: Checking Privileges. UID=%d EUID=%d\n", uid, euid)
+	_ = os.Getuid() // UID unused for now
 	if euid == 0 {
 		caps.Privileged = true
 	}

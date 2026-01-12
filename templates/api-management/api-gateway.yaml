@@ -1,0 +1,39 @@
+metadata:
+  id: "api-gateway-standard"
+  name: "High-Traffic API Gateway"
+  category: "api-management"
+  difficulty: "intermediate"
+  description: "Standard API gateway configuration for high-traffic environments."
+  icon: "🚀"
+  tags: ["api", "l7", "performance"]
+  author: "GhostPlane Team"
+  version: "1.1.0"
+
+architecture:
+  layers: ["L7 Proxy", "Health Checks"]
+  components: ["HTTP Proxy", "Backend Pool"]
+  diagram: "Client -> NLB+ L7 Proxy -> Backend Pool (API Servers)"
+
+parameters:
+  - name: "api_path"
+    type: "string"
+    required: true
+    default: "/api/v1/*"
+    description: "Path prefix for API requests"
+  - name: "backend_targets"
+    type: "ip_list"
+    required: true
+    description: "IP:Port list of backend API servers"
+
+configuration: |
+  l7_routes:
+    - path: "{{ .api_path }}"
+      targets: {{ .backend_targets | json }}
+      priority: 10
+
+verification:
+  test_requests:
+    - method: "GET"
+      path: "/api/v1/health"
+      expected_status: 200
+  metrics_to_check: ["total_requests", "active_connections"]

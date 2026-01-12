@@ -1,0 +1,39 @@
+metadata:
+  id: "edge-asset-proxy"
+  name: "Static Asset Edge Proxy"
+  category: "performance"
+  difficulty: "beginner"
+  description: "Fast delivery of images, JS, and CSS with edge-optimized headers."
+  icon: "📦"
+  tags: ["cdn", "performance", "static"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["Edge Cache Layer"]
+  components: ["S3/Storage Bucket", "Local Cache Proxy"]
+  diagram: "User -> NLB+ Edge Asset Proxy -> Origin Storage"
+
+parameters:
+  - name: "origin_url"
+    type: "string"
+    required: true
+    description: "The origin server URL (e.g., S3 bucket URL)"
+  - name: "cache_ttl"
+    type: "string"
+    required: false
+    default: "3600s"
+    description: "Time-to-live for cached assets"
+
+configuration: |
+  l7_routes:
+    - path: "/static/*"
+      targets: [{{ .origin_url | json }}]
+      # Cache headers would be injected by the proxy
+
+verification:
+  test_requests:
+    - method: "GET"
+      path: "/static/logo.png"
+      expected_status: 200
+  metrics_to_check: ["cache_hit_ratio", "origin_latency"]

@@ -1,0 +1,46 @@
+metadata:
+  id: "global-multi-cloud"
+  name: "Global Multi-Cloud Ingress"
+  category: "hybrid-cloud"
+  difficulty: "advanced"
+  description: "Cross-cloud load balancing with latency-aware routing and failover."
+  icon: "🌍"
+  tags: ["multi-cloud", "hybrid", "failover"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["Global L7 Ingress"]
+  components: ["AWS Cluster", "GCP Cluster", "On-Prem"]
+  diagram: "User -> Global NLB+ -> [Nearest Healthy Cloud Region]"
+
+parameters:
+  - name: "aws_region_targets"
+    type: "ip_list"
+    required: true
+    description: "Endpoints in AWS"
+  - name: "gcp_region_targets"
+    type: "ip_list"
+    required: true
+    description: "Endpoints in GCP"
+  - name: "failover_threshold"
+    type: "integer"
+    required: false
+    default: 3
+    description: "Number of failed health checks before region failover"
+
+configuration: |
+  l7_routes:
+    - path: "/*"
+      targets: {{ .aws_region_targets | json }}
+      priority: 10
+    - path: "/*"
+      targets: {{ .gcp_region_targets | json }}
+      priority: 5
+
+verification:
+  test_requests:
+    - method: "GET"
+      path: "/region"
+      expected_status: 200
+  metrics_to_check: ["region_failover_count", "latency_per_cloud"]

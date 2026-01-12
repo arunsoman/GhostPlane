@@ -42,15 +42,22 @@ export default function HealthCheckConfig({ config, onChange }: HealthCheckConfi
 
                 <div className="space-y-2">
                     <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Interval (seconds)</label>
-                    <div className="flex items-center gap-2">
-                        <Clock size={12} className="text-[var(--text-muted)]" />
-                        <input
-                            type="number"
-                            min="1"
-                            value={config.interval}
-                            onChange={(e) => handleChange('interval', parseInt(e.target.value) || 10)}
-                            className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-blue)]"
-                        />
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <Clock size={12} className="text-[var(--text-muted)]" />
+                            <input
+                                type="number"
+                                min="1"
+                                value={config.interval}
+                                onChange={(e) => handleChange('interval', parseInt(e.target.value) || 10)}
+                                className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--accent-blue)]"
+                            />
+                        </div>
+                        {config.interval < 5 && (
+                            <span className="text-[10px] text-orange-400 flex items-center gap-1">
+                                <AlertTriangle size={10} /> Low interval may cause high CPU usage
+                            </span>
+                        )}
                     </div>
                 </div>
 

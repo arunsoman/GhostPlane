@@ -1,0 +1,44 @@
+metadata:
+  id: "service-mesh-internal"
+  name: "Microservices Service Mesh"
+  category: "api-management"
+  difficulty: "advanced"
+  description: "Internal service-to-service communication with circuit breaking and mTLS simulation."
+  icon: "🕸️"
+  tags: ["mesh", "microservices", "internal", "l7"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["L7 Sidecar Proxy"]
+  components: ["Service A Proxy", "Service B Proxy"]
+  diagram: "Service A -> [Local NLB+ Sidecar] -> Service B"
+
+parameters:
+  - name: "service_a_targets"
+    type: "ip_list"
+    required: true
+    description: "Endpoints for Service A"
+  - name: "service_b_targets"
+    type: "ip_list"
+    required: true
+    description: "Endpoints for Service B"
+  - name: "mtls_enabled"
+    type: "boolean"
+    required: false
+    default: true
+    description: "Enable mTLS for internal traffic"
+
+configuration: |
+  l7_routes:
+    - path: "/service-a/*"
+      targets: {{ .service_a_targets | json }}
+    - path: "/service-b/*"
+      targets: {{ .service_b_targets | json }}
+
+verification:
+  test_requests:
+    - method: "GET"
+      path: "/service-a/info"
+      expected_status: 200
+  metrics_to_check: ["circuit_breaker_tripped", "mtls_errors"]

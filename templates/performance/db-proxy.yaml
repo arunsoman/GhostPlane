@@ -1,0 +1,36 @@
+metadata:
+  id: "db-read-proxy"
+  name: "Database Read-Replica Proxy"
+  category: "performance"
+  difficulty: "intermediate"
+  description: "Offload primary database by routing read-only SQL traffic to replicas."
+  icon: "💾"
+  tags: ["database", "sql", "performance"]
+  author: "GhostPlane Team"
+  version: "1.0.0"
+
+architecture:
+  layers: ["L4 DB Balancer"]
+  components: ["Primary DB", "Read Replica 1", "Read Replica 2"]
+  diagram: "App Queries -> NLB+ DB Proxy -> [Replica 1 | Replica 2]"
+
+parameters:
+  - name: "primary_db"
+    type: "string"
+    required: true
+    description: "IP:Port of Primary DB (Write)"
+  - name: "read_replicas"
+    type: "ip_list"
+    required: true
+    description: "List of Read Replica IP:Ports"
+
+configuration: |
+  l4_config:
+    protocol: "tcp"
+    listener_port: 5432
+    targets: {{ .read_replicas | json }}
+    health_check: "tcp_connect"
+
+verification:
+  test_requests: []
+  metrics_to_check: ["db_connection_reuse", "replica_lag_ms"]
